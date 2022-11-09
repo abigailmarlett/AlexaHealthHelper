@@ -16,7 +16,7 @@ from ask_sdk_model import Response
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
+#check_state = 0
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
@@ -27,7 +27,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        speak_output = "Welcome! If you want to play animal game please say so."
+        speak_output = "Welcome to daily check up"
 
         return (
             handler_input.response_builder
@@ -35,18 +35,19 @@ class LaunchRequestHandler(AbstractRequestHandler):
                 .ask(speak_output)
                 .response
         )
-#handler for animal tree game 
+#handler for check up 
 class MyHandler(AbstractRequestHandler):
-    """Handler for animal tree intent Intent."""
+    """Handler for check up Intent."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        return ask_utils.is_intent_name("animaltreegame")(handler_input)
+        return ask_utils.is_intent_name("checkup")(handler_input)
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         attr = handler_input.attributes_manager.session_attributes
-        attr["game_node"] = 0
-        speak_output = "Does your animal have feathers?"
+        attr["check_node"] = 0
+        attr["feeling"] = ""
+        speak_output = "How are you feeling today? You can say - I am fine, or I am tired, or I am in pain."
 
         return (
             handler_input.response_builder
@@ -54,6 +55,93 @@ class MyHandler(AbstractRequestHandler):
                 .ask("add a reprompt if you want to keep the session open for the user to respond")
                 .response
         )
+#handler for being fine 
+class FineHandler(AbstractRequestHandler):
+    """Handler for check up Intent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("FineIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        speak_output = "Glad to hear that, take care!"
+        return (
+            handler_input.response_builder
+                .speak(speak_output)
+                .ask("add a reprompt if you want to keep the session open for the user to respond")
+                .response
+        )
+
+class PainHandler(AbstractRequestHandler):
+    """Handler for PainIntent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("PainIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        attr = handler_input.attributes_manager.session_attributes
+        x = "wounded"
+        attr["check_node"] = 5
+        attr["feeling"] = "pain"
+        speak_output = "You seem " + x + ". Would you like me to call your caregiver?"
+        return (
+            handler_input.response_builder
+                .speak(speak_output)
+                .ask("add a reprompt if you want to keep the session open for the user to respond")
+                .response
+        )
+
+class TiredHandler(AbstractRequestHandler):
+    """Handler for TiredIntent."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("TiredIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        attr = handler_input.attributes_manager.session_attributes
+        attr["check_node"] = 1
+        speak_output = "Has your urine been very darkly colored?"
+        return (
+            handler_input.response_builder
+                .speak(speak_output)
+                .ask("add a reprompt if you want to keep the session open for the user to respond")
+                .response
+        )
+'''
+class firstHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("firstIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        attr = handler_input.attributes_manager.session_attributes
+        slots = handler_input.request_envelope.request.intent.slots
+        first_slot = slots["first"].value
+        check_state = attr["check_node"]
+        print(first_slot)
+        print(check_state)
+        speak_output = " "
+        if first_slot == "tired" or first_slot == "dizzy" or first_slot == "headache" or first_slot == "lightheaded" or first_slot == "thirsty" or first_slot == "hungry" or first_slot == "exhausted":
+            attr["check_node"] = 1
+            speak_output = "Has your urine been very darkly colored?"
+        if first_slot == "pain":
+            x = "wounded"
+            attr["check_node"] = 5
+            attr["feeling"] = "pain"
+            speak_output = "You seem " + x + ". Would you like me to call your caregiver?"
+            
+
+        return (
+            handler_input.response_builder
+                .speak(speak_output)
+                .ask("add a reprompt if you want to keep the session open for the user to respond")
+                .response
+        )
+
+'''
 
 class YesHandler(AbstractRequestHandler):
     """Handler forYes Intent."""
@@ -64,22 +152,24 @@ class YesHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         attr = handler_input.attributes_manager.session_attributes
-        game_state = attr["game_node"] 
+        check_state = attr["check_node"]
+        x = attr["feeling"]
+        print(check_state)
         
-        if game_state == 0:
-            speak_output = "Does your animal fly?"
-            game_state = 1
-        elif game_state == 1:
-            speak_output = "This is a hawk"
-            game_state = 3
-        elif game_state == 2:
-            speak_output = "This is a dolphin"
-            game_state = 5
+        if check_state == 1:
+            speak_output = "Have you notices blood in your urine?"
+            attr["check_node"] = 2
+        elif check_state == 2:
+            attr["feeling"] = "UTI"
+            x = attr["feeling"]
+            speak_output = "You seem like you have a " + x +  ", would you like me to call a caregiver?"
+            attr["check_node"] = 5
+        elif check_state == 5:
+            speak_output = "Calling Dr. Who ... "
         else:
             speak_output = "This should not happen"
-            game_state = 0
+            attr["check_node"] = 0
             
-        attr["game_node"] = game_state
         return (
             handler_input.response_builder
                 .speak(speak_output)
@@ -95,22 +185,25 @@ class NoHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         attr = handler_input.attributes_manager.session_attributes
-        game_state = attr["game_node"] 
+        check_state = attr["check_node"]
+        feeling = attr["feeling"]
+        print("check_state : " + str(check_state))
         
-        if game_state == 0:
-            speak_output = "Does your animal have fins?"
-            game_state = 1
-        elif game_state == 1:
-            speak_output = "This is a penguin"
-            game_state = 3
-        elif game_state == 2:
-            speak_output = "This is a bear"
-            game_state = 5
+        if check_state == 1:
+            attr["feeling"] = "fatigued"
+            x = attr["feeling"]
+            speak_output = "You seem " + x + ", would you like me to call a caregiver?"
+            attr["check_node"] = 5
+        elif check_state == 2:
+            attr["feeling"] = "dehydrated"
+            x = attr["feeling"]
+            speak_output = "You seem  "+ x + ", would you like me to call a caregiver?"
+            attr["check_node"] = 5
+        elif check_state == 5:
+            speak_output = "Ok, here are some tips about " + attr["feeling"] + "."
         else:
-            speak_output = "This should not happen"
-            game_state = 0
-            
-        attr["game_node"] = game_state
+            speak_output = "This should not happen!!"
+            attr["check_node"] = 0
         return (
             handler_input.response_builder
                 .speak(speak_output)
@@ -253,6 +346,9 @@ sb = SkillBuilder()
 
 sb.add_request_handler(YesHandler())
 sb.add_request_handler(NoHandler())
+sb.add_request_handler(FineHandler())
+sb.add_request_handler(TiredHandler())
+sb.add_request_handler(PainHandler())
 sb.add_request_handler(MyHandler())
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(HelloWorldIntentHandler())
